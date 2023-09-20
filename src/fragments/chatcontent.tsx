@@ -11,8 +11,6 @@ interface ChatContentProps {
 const ChatContent = ({ messages }: ChatContentProps) => {
 
   const handleDecrypt = async (event: any, message: Message) => {
-    // event.target.parentElement.children[1].innerText
-    console.log(event.target.parentElement.children[1].innerText)
     const encryptedMessage = await decodeb64(message.body);
     const symKey = await decodeb64(message.symKey);
     const accessControl = await decodeb64(message.accessControlConditions);
