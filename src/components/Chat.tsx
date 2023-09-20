@@ -36,7 +36,9 @@ const Chat = ({ address }: ChatProps) => {
       }
     `);
     const messageArray: Message[] = [];
-    console.log(posts.data.postsIndex.edges);
+    if(posts.data.postsIndex === null){
+      return
+    }
     posts.data.postsIndex.edges.forEach((el: { node: Post }) => {
       messageArray.push({
         text: el.node.body,
