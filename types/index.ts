@@ -4,7 +4,7 @@ export type Post = {
   id: string;
   to: string;
   created: string;
-  symKey: string;
+  ciphertext: string;
   chain: string;
   accessControlConditions: string;
   accessControlConditionType: string;

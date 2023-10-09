@@ -3,21 +3,24 @@ import { Message } from "../../types";
 import {} from "../hooks/messages-transform.types";
 import { decryptWithLit, decodeb64 } from "../../utils/lit";
 import Avatar from "./avatar";
+import { ILitNodeClient } from "@lit-protocol/types";
 
 interface ChatContentProps {
   messages: Message[];
+  lit: ILitNodeClient;
 }
 
-const ChatContent = ({ messages }: ChatContentProps) => {
+const ChatContent = ({ messages, lit }: ChatContentProps) => {
 
   const handleDecrypt = async (event: any, message: Message) => {
-    const encryptedMessage = await decodeb64(message.body);
-    const symKey = await decodeb64(message.symKey);
+    const encryptedMessage = message.body;
+    const ciphertext = message.ciphertext;
     const accessControl = await decodeb64(message.accessControlConditions);
     const decoded = new TextDecoder().decode(accessControl);
     const decodedMessage = await decryptWithLit(
+      lit,
+      ciphertext,
       encryptedMessage,
-      symKey,
       JSON.parse(decoded),
       message.chain
     );

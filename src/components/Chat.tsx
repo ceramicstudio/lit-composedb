@@ -4,17 +4,24 @@ import ChatContent from "../fragments/chatcontent";
 import ChatInputBox from "../fragments/chatinputbox";
 import { Post, Message } from "../../types";
 import { useCeramicContext } from "../../context";
+import { ILitNodeClient } from "@lit-protocol/types";
 
-type ChatProps = { address: string };
+type ChatProps = { address: string, lit: ILitNodeClient };
 
-const Chat = ({ address }: ChatProps) => {
+const Chat = ({ address, lit }: ChatProps) => {
   const [chatMessages, setChatMessages] = React.useState<Message[]>([]);
   const clients = useCeramicContext();
   const { composeClient } = clients;
 
 
   const getMessages = async () => {
-    const posts: any = await composeClient.executeQuery(`
+    const posts = await composeClient.executeQuery<{
+      postsIndex: {
+        edges: {
+          node: Post;
+        }[];
+      };
+    }>(`
     query {
         postsIndex (last:20) {
           edges {
@@ -26,7 +33,7 @@ const Chat = ({ address }: ChatProps) => {
               body
               to
               created
-              symKey
+              ciphertext
               chain
               accessControlConditions
               accessControlConditionType
@@ -36,18 +43,20 @@ const Chat = ({ address }: ChatProps) => {
       }
     `);
     const messageArray: Message[] = [];
-    if(posts.data.postsIndex === null){
+    if(posts.data && posts.data.postsIndex === null){
       return
     }
-    posts.data.postsIndex.edges.forEach((el: { node: Post }) => {
-      messageArray.push({
-        text: el.node.body,
-        sentBy: el.node.author.id.split(':')[4]!!,
-        sentAt: new Date(el.node.created),
-        isChatOwner: address === el.node.author.id.split(':')[4]!!,
-        ...el.node
+    if (posts.data && posts.data.postsIndex) {
+      posts.data.postsIndex.edges.forEach((el: { node: Post }) => {
+        messageArray.push({
+          text: el.node.body,
+          sentBy: el.node.author.id.split(':')[4]!!,
+          sentAt: new Date(el.node.created),
+          isChatOwner: address === el.node.author.id.split(':')[4]!!,
+          ...el.node
+        });
       });
-    });
+    }
     setChatMessages(messageArray);
     // console.log(messages)
   };
@@ -84,8 +93,8 @@ const Chat = ({ address }: ChatProps) => {
           name={address}
           numberOfMessages={chatMessages ? chatMessages.length : 0}
         />
-        {chatMessages && <ChatContent messages={chatMessages} />}
-        <ChatInputBox sendANewMessage={sendANewMessage} address={address} />
+        {chatMessages && <ChatContent messages={chatMessages} lit={lit} />}
+        <ChatInputBox sendANewMessage={sendANewMessage} address={address} lit={lit}/>
       </div>
     </div>
   );

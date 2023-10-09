@@ -1,17 +1,19 @@
 import React from "react";
-import { Message } from "../../types";
+import { Message, Post } from "../../types";
 import DebouncedInput from "./debounced";
 import { encryptWithLit, encodeb64 } from "../../utils/lit";
 import { useCeramicContext } from "../../context";
+import { ILitNodeClient } from "@lit-protocol/types";
 
 interface ChatInputBoxProps {
   sendANewMessage: (message: Message) => void;
   address: string;
+  lit: ILitNodeClient
 }
 
 const chain = "ethereum";
 
-const ChatInputBox = ({ sendANewMessage, address }: ChatInputBoxProps) => {
+const ChatInputBox = ({ sendANewMessage, address, lit }: ChatInputBoxProps) => {
   const [newMessage, setNewMessage] = React.useState("");
   const clients = useCeramicContext();
   const { composeClient } = clients;
@@ -35,24 +37,31 @@ const ChatInputBox = ({ sendANewMessage, address }: ChatInputBoxProps) => {
         },
       ];
 
-      const encrypted = await encryptWithLit(
+      const { ciphertext, dataToEncryptHash } = await encryptWithLit(
+        lit,
         newMessage,
         accessControlConditions,
         chain
       );
 
+      console.log(ciphertext)
+
       const stringified = JSON.stringify(accessControlConditions);
       const b64 = new TextEncoder().encode(stringified);
       const encoded = await encodeb64(b64);
 
-      const post: any = await composeClient.executeQuery(`
+      const post: any = await composeClient.executeQuery<{
+        createPosts: {
+          document: Post;
+        };
+      }>(`
         mutation {
           createPosts(input: {
             content: {
-              body: """${encrypted[0]}"""
+              body: """${dataToEncryptHash}"""
               to: "${address}"
               created: "${new Date().toISOString()}"
-              symKey: "${encrypted[1]}"
+              ciphertext: "${ciphertext}"
               chain: "${chain}"
               accessControlConditions: "${encoded}"
               accessControlConditionType: "accessControlConditions"
@@ -63,7 +72,7 @@ const ChatInputBox = ({ sendANewMessage, address }: ChatInputBoxProps) => {
               body
               to
               created
-              symKey
+              ciphertext
               chain
               accessControlConditions
             }
