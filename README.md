@@ -2,6 +2,8 @@
 
 Learn how to use LIT Protocol to encrypt and decrypt data based on on-chain condition logic while storing on ComposeDB, built on the Ceramic Network.
 
+For an implementation using Web3Modal for authentication, check out the `with-web3modal` branch.
+
 ## Getting Started
 
 1. Install your dependencies:
